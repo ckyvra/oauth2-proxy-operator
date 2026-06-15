@@ -52,6 +52,10 @@ generate:
 	controller-gen object paths="./api/..."
 	controller-gen crd paths="./api/..." output:crd:dir=config/crd
 
+GOLANGCI_LINT = $(shell go env GOPATH)/bin/golangci-lint
+
 .PHONY: lint
 lint:
-	golangci-lint run ./...
+	@command -v $(GOLANGCI_LINT) > /dev/null 2>&1 || \
+		go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+	$(GOLANGCI_LINT) run ./...
