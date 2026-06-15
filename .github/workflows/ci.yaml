@@ -92,8 +92,14 @@ jobs:
     - name: Build and run the operator
       run: |
         go build -o /tmp/manager main.go
-        /tmp/manager --leader-elect=false --metrics-bind-address=:9090 &
+        /tmp/manager --leader-elect=false --metrics-bind-address=:9090 > /tmp/operator.log 2>&1 &
         sleep 5
+        if ! kill -0 $! 2>/dev/null; then
+          echo "Operator failed to start:"
+          cat /tmp/operator.log
+          exit 1
+        fi
+        echo "Operator started (PID $!)"
 
     - name: Create an OAuth2Proxy resource
       run: |
@@ -118,11 +124,24 @@ jobs:
             ingressClassName: traefik
         EOF
 
-    - name: Verify Deployment
+    - name: Wait for Deployment
       run: |
+        for i in $(seq 1 12); do
+          if kubectl get -n test-operator deployment/test-proxy &>/dev/null; then
+            echo "Deployment found after ${i}s"
+            break
+          fi
+          echo "Waiting... ${i}s"
+          sleep 5
+        done
         kubectl wait -n test-operator deployment/test-proxy \
-          --for=condition=Available --timeout=60s
-        kubectl get -n test-operator deployment/test-proxy -o yaml
+          --for=condition=Available --timeout=60s || {
+          echo "--- Operator logs ---"
+          cat /tmp/operator.log
+          echo "--- CR status ---"
+          kubectl get -n test-operator oauth2proxy/test-proxy -o yaml
+          exit 1
+        }
 
     - name: Verify Service
       run: |
