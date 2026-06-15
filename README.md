@@ -1,7 +1,6 @@
 # oauth2-proxy-operator
 
 [![CI](https://github.com/ckyvra/oauth2-proxy-operator/actions/workflows/ci.yaml/badge.svg)](https://github.com/ckyvra/oauth2-proxy-operator/actions/workflows/ci.yaml)
-[![Go Report Card](https://goreportcard.com/badge/github.com/ckyvra/oauth2-proxy-operator)](https://goreportcard.com/report/github.com/ckyvra/oauth2-proxy-operator)
 [![Go Version](https://img.shields.io/github/go-mod/go-version/ckyvra/oauth2-proxy-operator)](https://github.com/ckyvra/oauth2-proxy-operator)
 [![License](https://img.shields.io/github/license/ckyvra/oauth2-proxy-operator)](https://github.com/ckyvra/oauth2-proxy-operator/blob/main/LICENSE)
 [![Release](https://img.shields.io/github/v/release/ckyvra/oauth2-proxy-operator)](https://github.com/ckyvra/oauth2-proxy-operator/releases)
