@@ -1,0 +1,26 @@
+bin/
+vendor/
+*.test
+*.out
+*.testbin
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+*.env.local
+
+# Build
+/tmp/
+
+# Go workspace
+go.work
+go.work.sum

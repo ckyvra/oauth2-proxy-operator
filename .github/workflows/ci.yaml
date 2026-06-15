@@ -1,0 +1,152 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: actions/setup-go@v5
+      with:
+        go-version: '1.23'
+        cache: true
+
+    - name: Install envtest
+      run: |
+        go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+        setup-envtest use 1.31.x
+
+    - name: Run tests
+      run: make test
+
+    - name: Build binary
+      run: make build
+
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: actions/setup-go@v5
+      with:
+        go-version: '1.23'
+        cache: true
+
+    - name: Create Kind cluster
+      uses: helm/kind-action@v1
+      with:
+        cluster_name: oauth2-proxy-operator
+        config: |
+          kind: Cluster
+          apiVersion: kind.x-k8s.io/v1alpha4
+          nodes:
+          - role: control-plane
+            extraPortMappings:
+            - containerPort: 80
+              hostPort: 80
+            - containerPort: 443
+              hostPort: 443
+
+    - name: Install Helm
+      uses: azure/setup-helm@v4
+
+    - name: Install Traefik
+      run: |
+        helm repo add traefik https://traefik.github.io/charts
+        helm repo update
+        cat <<EOF > /tmp/traefik-values.yaml
+        ports:
+          web:
+            hostPort: 80
+          websecure:
+            hostPort: 443
+        providers:
+          kubernetesIngress:
+            publishedService:
+              enabled: true
+        EOF
+        helm install traefik traefik/traefik -n traefik --create-namespace -f /tmp/traefik-values.yaml
+        kubectl wait -n traefik deployment/traefik --for=condition=Available --timeout=120s
+
+    - name: Install the CRD
+      run: kubectl apply -f config/crd/
+
+    - name: Create test namespace and secret
+      run: |
+        kubectl create namespace test-operator
+        kubectl create secret generic oauth2-proxy-secret \
+          -n test-operator \
+          --from-literal=client-secret=test-secret
+
+    - name: Build and run the operator
+      run: |
+        go build -o /tmp/manager main.go
+        /tmp/manager --leader-elect=false --metrics-bind-address=:9090 &
+        sleep 5
+
+    - name: Create an OAuth2Proxy resource
+      run: |
+        cat <<EOF | kubectl apply -f -
+        apiVersion: oauth2proxy.kyvrakidis.com/v1alpha1
+        kind: OAuth2Proxy
+        metadata:
+          name: test-proxy
+          namespace: test-operator
+        spec:
+          upstream: http://my-app:8080
+          clientId: my-client
+          clientSecret:
+            name: oauth2-proxy-secret
+          realm: my-realm
+          issuer: https://keycloak.example.com/realms/my-realm
+          role: viewer
+          replicas: 1
+          ingress:
+            enabled: true
+            host: auth.example.com
+            ingressClassName: traefik
+        EOF
+
+    - name: Verify Deployment
+      run: |
+        kubectl wait -n test-operator deployment/test-proxy \
+          --for=condition=Available --timeout=60s
+        kubectl get -n test-operator deployment/test-proxy -o yaml
+
+    - name: Verify Service
+      run: |
+        kubectl get -n test-operator service/test-proxy -o yaml
+
+    - name: Verify Ingress
+      run: |
+        kubectl get -n test-operator ingress/test-proxy -o yaml
+
+    - name: Verify oauth2-proxy args
+      run: |
+        kubectl get -n test-operator deployment/test-proxy -o jsonpath='{.spec.template.spec.containers[0].args}' | \
+          grep -q -- "--provider=oidc" && echo "provider OK"
+        kubectl get -n test-operator deployment/test-proxy -o jsonpath='{.spec.template.spec.containers[0].args}' | \
+          grep -q -- "--allowed-role=viewer" && echo "role OK"
+
+    - name: Verify Traefik picked up the Ingress
+      run: |
+        kubectl wait -n test-operator ingress/test-proxy \
+          --for=jsonpath='{.status.loadBalancer.ingress[0].ip}' \
+          --timeout=30s && echo "Traefik accepted the Ingress"
+
+    - name: Verify request through Traefik to oauth2-proxy
+      run: |
+        sleep 5
+        RESP=$(curl -sS -o /dev/null -w "%{http_code}" -H "Host: auth.example.com" http://localhost/oauth2/start)
+        echo "HTTP status: $RESP"
+        # oauth2-proxy redirects to Keycloak (302), no session = expected
+        [ "$RESP" = "302" ] && echo "SUCCESS: Traefik routed to oauth2-proxy, redirect to Keycloak"
+
+    - name: Cleanup
+      run: kill %1 || true

@@ -1,0 +1,19 @@
+apiVersion: oauth2proxy.kyvrakidis.com/v1alpha1
+kind: OAuth2Proxy
+metadata:
+  name: keycloak-proxy
+  namespace: default
+spec:
+  upstream: http://my-app:8080
+  clientId: my-oauth2-proxy-client
+  clientSecret:
+    name: oauth2-proxy-secret
+  realm: my-realm
+  issuer: https://keycloak.example.com/realms/my-realm
+  role: my-app-role
+  keycloakRole: realm:admin
+  replicas: 2
+  ingress:
+    enabled: true
+    host: oauth2-proxy.example.com
+    ingressClassName: traefik

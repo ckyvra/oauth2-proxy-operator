@@ -1,0 +1,119 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: oauth2proxies.oauth2proxy.kyvrakidis.com
+spec:
+  group: oauth2proxy.kyvrakidis.com
+  names:
+    kind: OAuth2Proxy
+    listKind: OAuth2ProxyList
+    plural: oauth2proxies
+    singular: oauth2proxy
+    shortNames:
+    - o2p
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
+    subresources:
+      status: {}
+    schema:
+      openAPIV3Schema:
+        description: OAuth2Proxy configures an oauth2-proxy instance for Keycloak.
+        type: object
+        properties:
+          apiVersion:
+            type: string
+          kind:
+            type: string
+          metadata:
+            type: object
+          spec:
+            type: object
+            required:
+            - upstream
+            - clientId
+            - realm
+            - issuer
+            properties:
+              upstream:
+                type: string
+                description: "Upstream application URL to protect (e.g. http://app:8080)"
+              address:
+                type: string
+                description: "oauth2-proxy listen address (default: :4180)"
+              clientId:
+                type: string
+                description: "Keycloak OIDC client ID"
+              clientSecret:
+                type: object
+                description: "Reference to a Kubernetes Secret containing the 'client-secret' key"
+                properties:
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+              realm:
+                type: string
+                description: "Keycloak realm name"
+              issuer:
+                type: string
+                description: "Full Keycloak issuer URL (e.g. https://keycloak.example.com/realms/myrealm)"
+              role:
+                type: string
+                description: "Keycloak role required to access the application"
+              keycloakRole:
+                type: string
+                description: "Alternative or more specific Keycloak role"
+              replicas:
+                type: integer
+                format: int32
+                minimum: 1
+                default: 1
+                description: "Number of replicas (default: 1)"
+              ingress:
+                type: object
+                description: "Ingress configuration to expose oauth2-proxy externally"
+                properties:
+                  enabled:
+                    type: boolean
+                  host:
+                    type: string
+                    description: "Hostname for the ingress rule"
+                  ingressClassName:
+                    type: string
+                    description: "Ingress class name (e.g. traefik, nginx)"
+                  tlsSecretName:
+                    type: string
+                    description: "Name of the TLS secret for HTTPS"
+              image:
+                type: string
+                description: "oauth2-proxy Docker image (default: quay.io/oauth2-proxy/oauth2-proxy:v7.8.1)"
+          status:
+            type: object
+            properties:
+              ready:
+                type: boolean
+              reason:
+                type: string
+              phase:
+                type: string
+    additionalPrinterColumns:
+    - name: Ready
+      type: boolean
+      jsonPath: .status.ready
+    - name: Phase
+      type: string
+      jsonPath: .status.phase
+    - name: Upstream
+      type: string
+      jsonPath: .spec.upstream
+    - name: Realm
+      type: string
+      jsonPath: .spec.realm
+    - name: Age
+      type: date
+      jsonPath: .metadata.creationTimestamp
+  conversion:
+    strategy: None
