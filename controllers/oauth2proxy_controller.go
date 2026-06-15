@@ -215,16 +215,30 @@ func (r *OAuth2ProxyReconciler) reconcileDeployment(
 		return nil, err
 	}
 
+	logger := log.FromContext(ctx)
+
 	existing := &appsv1.Deployment{}
 	if err := r.Get(ctx, types.NamespacedName{Name: name, Namespace: ns}, existing); err != nil {
 		if errors.IsNotFound(err) {
-			return dep, r.Create(ctx, dep)
+			logger.Info("creating deployment", "namespace", ns, "name", name)
+			if err := r.Create(ctx, dep); err != nil {
+				logger.Error(err, "failed to create deployment")
+				return nil, err
+			}
+			logger.Info("deployment created")
+			return dep, nil
 		}
 		return nil, err
 	}
 
+	logger.Info("updating existing deployment", "namespace", ns, "name", name)
 	existing.Spec = dep.Spec
-	return dep, r.Update(ctx, existing)
+	if err := r.Update(ctx, existing); err != nil {
+		logger.Error(err, "failed to update deployment")
+		return nil, err
+	}
+	logger.Info("deployment updated")
+	return dep, nil
 }
 
 func (r *OAuth2ProxyReconciler) reconcileService(
@@ -362,13 +376,16 @@ func (r *OAuth2ProxyReconciler) setStatus(
 	ready bool,
 	reason, phase string,
 ) {
-	if instance.Status.Ready != ready || instance.Status.Reason != reason || instance.Status.Phase != phase {
-		instance.Status.Ready = ready
-		instance.Status.Reason = reason
-		instance.Status.Phase = phase
-		if err := r.Status().Update(ctx, instance); err != nil {
-			log.FromContext(ctx).Error(err, "failed to update status")
-		}
+	if instance.Status.Ready == ready && instance.Status.Reason == reason && instance.Status.Phase == phase {
+		return
+	}
+
+	patch := client.MergeFrom(instance.DeepCopy())
+	instance.Status.Ready = ready
+	instance.Status.Reason = reason
+	instance.Status.Phase = phase
+	if err := r.Status().Patch(ctx, instance, patch); err != nil {
+		log.FromContext(ctx).Error(err, "failed to update status")
 	}
 }
 

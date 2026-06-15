@@ -92,7 +92,7 @@ jobs:
     - name: Build and run the operator
       run: |
         go build -o /tmp/manager main.go
-        /tmp/manager --leader-elect=false --metrics-bind-address=:9090 > /tmp/operator.log 2>&1 &
+        /tmp/manager --leader-elect=false --metrics-bind-address=:9090 --zap-log-level=debug > /tmp/operator.log 2>&1 &
         sleep 5
         if ! kill -0 $! 2>/dev/null; then
           echo "Operator failed to start:"
@@ -123,6 +123,17 @@ jobs:
             host: auth.example.com
             ingressClassName: traefik
         EOF
+
+    - name: Debug — list all resources
+      run: |
+        echo "--- Deployments ---"
+        kubectl get deployments -n test-operator -o wide 2>&1 || true
+        echo "--- Services ---"
+        kubectl get services -n test-operator -o wide 2>&1 || true
+        echo "--- Ingresses ---"
+        kubectl get ingresses -n test-operator -o wide 2>&1 || true
+        echo "--- OAuth2Proxy ---"
+        kubectl get oauth2proxies -n test-operator -o yaml 2>&1 || true
 
     - name: Wait for Deployment
       run: |
