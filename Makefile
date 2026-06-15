@@ -57,5 +57,5 @@ GOLANGCI_LINT = $(shell go env GOPATH)/bin/golangci-lint
 .PHONY: lint
 lint:
 	@command -v $(GOLANGCI_LINT) > /dev/null 2>&1 || \
-		go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(dir $(GOLANGCI_LINT)) v2.12.2
 	$(GOLANGCI_LINT) run ./...
