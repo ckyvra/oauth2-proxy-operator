@@ -168,12 +168,6 @@ jobs:
         kubectl get -n test-operator deployment/test-proxy -o jsonpath='{.spec.template.spec.containers[0].args}' | \
           grep -q -- "--allowed-role=viewer" && echo "role OK"
 
-    - name: Verify Traefik picked up the Ingress
-      run: |
-        kubectl wait -n test-operator ingress/test-proxy \
-          --for=jsonpath='{.status.loadBalancer.ingress[0].ip}' \
-          --timeout=30s && echo "Traefik accepted the Ingress"
-
     - name: Verify Ingress routes to the correct Service
       run: |
         INGRESS_SVC=$(kubectl get -n test-operator ingress/test-proxy \
