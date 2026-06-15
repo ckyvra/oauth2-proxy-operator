@@ -28,6 +28,21 @@ jobs:
     - name: Build binary
       run: make build
 
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: actions/setup-go@v5
+      with:
+        go-version: '1.23'
+        cache: true
+
+    - name: golangci-lint
+      uses: golangci/golangci-lint-action@v6
+      with:
+        version: latest
+
   e2e:
     runs-on: ubuntu-latest
     steps:
