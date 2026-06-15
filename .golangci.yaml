@@ -20,6 +20,5 @@ linters-settings:
     locale: US
 
 issues:
-  exclude-use-default: false
-  max-issue-per-linter: 0
+  max-issues-per-linter: 0
   max-same-issues: 0
