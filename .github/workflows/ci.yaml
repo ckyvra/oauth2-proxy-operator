@@ -80,7 +80,7 @@ jobs:
         kubectl wait -n traefik deployment/traefik --for=condition=Available --timeout=120s
 
     - name: Install the CRD
-      run: kubectl apply -f config/crd/
+      run: kubectl apply -f config/crd/oauth2proxy.kyvrakidis.com_oauth2proxies.yaml
 
     - name: Create test namespace and secret
       run: |
