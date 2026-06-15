@@ -28,6 +28,27 @@ jobs:
     - name: Build binary
       run: make build
 
+  trivy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: actions/setup-go@v5
+      with:
+        go-version: '1.23'
+        cache: true
+
+    - name: Build Docker image
+      run: docker build -t oauth2-proxy-operator:test .
+
+    - name: Trivy scan
+      uses: aquasecurity/trivy-action@0.29.0
+      with:
+        image-ref: oauth2-proxy-operator:test
+        format: table
+        exit-code: 1
+        severity: HIGH,CRITICAL
+
   lint:
     runs-on: ubuntu-latest
     steps:
