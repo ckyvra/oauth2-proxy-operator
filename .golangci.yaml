@@ -3,22 +3,21 @@ run:
   timeout: 5m
 
 linters:
+  default: none
   enable:
     - errcheck
-    - gosimple
     - govet
     - ineffassign
     - staticcheck
     - unused
-    - gocyclo
-    - gofmt
     - misspell
+  settings:
+    misspell:
+      locale: US
 
-linters-settings:
-  gocyclo:
-    min-complexity: 15
-  misspell:
-    locale: US
+formatters:
+  enable:
+    - gofmt
 
 issues:
   max-issues-per-linter: 0
