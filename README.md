@@ -27,7 +27,7 @@ The operator watches `OAuth2Proxy` custom resources and reconciles:
 ## CRD
 
 | Field | Type | Required | Description |
-|---|---|---|---|---|
+|---|---|---|---|
 | `upstream` | string | yes | Upstream application URL to protect (e.g. `http://app:8080`) |
 | `address` | string | no | oauth2-proxy listen address (default: `:4180`) |
 | `clientId` | string | yes | Keycloak OIDC client ID |
