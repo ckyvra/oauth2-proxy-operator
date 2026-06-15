@@ -43,7 +43,7 @@ func (r *OAuth2ProxyReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return ctrl.Result{}, err
 	}
 
-	if instance.ObjectMeta.DeletionTimestamp.IsZero() {
+	if instance.DeletionTimestamp.IsZero() {
 		if !controllerutil.ContainsFinalizer(instance, oauth2ProxyFinalizer) {
 			controllerutil.AddFinalizer(instance, oauth2ProxyFinalizer)
 			if err := r.Update(ctx, instance); err != nil {
