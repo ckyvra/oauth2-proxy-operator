@@ -93,7 +93,3 @@ type OAuth2ProxyList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []OAuth2Proxy `json:"items"`
 }
-
-func init() {
-	SchemeBuilder.Register(&OAuth2Proxy{}, &OAuth2ProxyList{})
-}

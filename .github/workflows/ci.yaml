@@ -14,7 +14,7 @@ jobs:
 
     - uses: actions/setup-go@v5
       with:
-        go-version: '1.25'
+        go-version: '1.26'
         cache: true
 
     - name: Install envtest
@@ -35,7 +35,7 @@ jobs:
 
     - uses: actions/setup-go@v5
       with:
-        go-version: '1.25'
+        go-version: '1.26'
         cache: true
 
     - name: Build Docker image
@@ -56,7 +56,7 @@ jobs:
 
     - uses: actions/setup-go@v5
       with:
-        go-version: '1.25'
+        go-version: '1.26'
         cache: true
 
     - name: golangci-lint
@@ -71,7 +71,7 @@ jobs:
 
     - uses: actions/setup-go@v5
       with:
-        go-version: '1.25'
+        go-version: '1.26'
         cache: true
 
     - name: Write Kind config
