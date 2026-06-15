@@ -1,0 +1,42 @@
+version: 2
+project_name: oauth2-proxy-operator
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - main: .
+    binary: manager
+    ldflags:
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+
+docker_images:
+  - image_name: ghcr.io/ckyvra/oauth2-proxy-operator
+    dockerfile: Dockerfile
+    build_flag_templates:
+      - "--platform=linux/amd64,linux/arm64"
+
+checksum:
+  name_template: "checksums.txt"
+
+snapshot:
+  version_template: "{{ .Tag }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^ci:"
+      - "^chore:"

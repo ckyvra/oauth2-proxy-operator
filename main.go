@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"os"
+	"runtime/debug"
 
 	oauth2proxyv1alpha1 "github.com/ckyvra/oauth2-proxy-operator/api/v1alpha1"
 	"github.com/ckyvra/oauth2-proxy-operator/controllers"
@@ -16,18 +17,34 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 )
 
+var (
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
+)
+
 func main() {
 	var metricsAddr string
 	var probeAddr string
 	var enableLeaderElection bool
+	var showVersion bool
 	var zapOpts zap.Options
 
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
+	flag.BoolVar(&showVersion, "version", false, "Print version and exit.")
 	zapOpts.BindFlags(flag.CommandLine)
 	flag.Parse()
+
+	if showVersion {
+		bi, ok := debug.ReadBuildInfo()
+		if ok {
+			setupLog.Info("oauth2-proxy-operator", "version", version, "commit", commit, "date", date, "go", bi.GoVersion)
+		}
+		os.Exit(0)
+	}
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&zapOpts)))
 
